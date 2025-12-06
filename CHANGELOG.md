@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.3...v1.1.0) (2025-12-06)
+
+### 🚀 Features
+
+* add Taskfile and fix config for extra env vars ([#2](https://github.com/justgithubaccount/app-poly-gitops-fastapi/issues/2)) ([6e2f6f5](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/6e2f6f55ed6785da2aaecd66454262af71c06e2f))
+
 ## [1.0.3](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.2...v1.0.3) (2025-12-06)
 
 ### 🐛 Bug Fixes
