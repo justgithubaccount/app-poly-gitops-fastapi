@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Этот файл содержит контекст для Claude Code при работе с проектом.
+Контекст для Claude Code при работе с проектом.
 
 ## О проекте
 
@@ -36,22 +36,35 @@ app/
 │   ├── config.py        # Pydantic Settings
 │   ├── db.py            # SQLModel database
 │   ├── health.py        # Health endpoint
-│   └── llm_client.py    # OpenRouter client
-├── models/              # SQLModel entities
-├── schemas/             # API request/response
-├── services/            # ChatService
-├── integrations/        # Notion, BehaviorManager
-├── behavior/            # Behavior models
-└── observability/       # OpenTelemetry tracing
+│   ├── llm_client.py    # OpenRouter client
+│   └── project_memory.py # In-memory fallback
+├── models/
+│   ├── chat.py          # Chat models
+│   └── db_models.py     # SQLModel entities
+├── schemas/
+│   ├── chat.py          # Chat request/response
+│   └── projects.py      # Project schemas
+├── services/
+│   └── chat_service.py  # ChatService бизнес-логика
+├── integrations/
+│   ├── notion_client.py # Notion API client
+│   └── behavior_manager.py # Behavior loading
+├── behavior/
+│   └── models.py        # Behavior models
+└── observability/
+    └── tracing.py       # OpenTelemetry setup
 ```
 
-## Ключевые файлы
+## API Endpoints
 
-- `app/main.py` — точка входа, lifespan context manager
-- `app/api.py` — все API endpoints
-- `app/core/config.py` — Settings с SettingsConfigDict
-- `app/core/llm_client.py` — OpenRouterClient
-- `app/services/chat_service.py` — бизнес-логика чатов
+- `GET /` — status
+- `GET /health` — health check
+- `POST /api/v1/chat` — standalone chat
+- `POST /api/v1/projects` — create project
+- `GET /api/v1/projects` — list projects
+- `POST /api/v1/projects/{id}/chat` — chat in project
+- `GET /api/v1/projects/{id}/history` — chat history
+- `GET /api/v1/behavior/schema` — current behavior
 
 ## Стек
 
@@ -61,6 +74,9 @@ app/
 - OpenTelemetry (traces, logs, metrics)
 - OpenRouter (LLM)
 - uv (package manager)
+- structlog (logging)
+- httpx (HTTP client)
+- notion-client (Notion API)
 
 ## Конвенции
 
@@ -68,8 +84,10 @@ app/
 - Datetime: `datetime.now(UTC)` вместо `datetime.utcnow()`
 - FastAPI: lifespan context manager вместо `@app.on_event`
 - Тесты: `OTEL_SDK_DISABLED=true` для отключения трейсинга
+- Логирование: `enrich_context(event="name").info("message")`
 
 ## Связанные репозитории
 
-- `app-crewai-cluster` — CrewAI агенты (отдельный сервис)
-- `app-release` — Helm charts и GitOps
+- `app-poly-gitops-k8s` — GitOps манифесты (ArgoCD Applications)
+- `app-poly-gitops-helm` — Helm chart для сервисов
+- `app-poly-gitops-crewai` — CrewAI мониторинг
