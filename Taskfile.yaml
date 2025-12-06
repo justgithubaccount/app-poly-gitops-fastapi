@@ -1,0 +1,51 @@
+version: '3'
+
+tasks:
+  # Development
+  dev:
+    desc: Run development server
+    cmd: uv run uvicorn app.main:app --reload
+
+  # Testing
+  test:
+    desc: Run tests
+    cmd: uv run pytest tests/ -v
+    env:
+      OTEL_SDK_DISABLED: "true"
+
+  test:cov:
+    desc: Run tests with coverage
+    cmd: uv run pytest tests/ -v --cov=app --cov-report=term-missing
+    env:
+      OTEL_SDK_DISABLED: "true"
+
+  # Linting
+  lint:
+    desc: Run ruff linter
+    cmd: uv run ruff check app/ tests/ --fix
+
+  typecheck:
+    desc: Run mypy type checker
+    cmd: uv run mypy app/ --ignore-missing-imports
+
+  # All checks
+  check:
+    desc: Run all checks (lint, typecheck, test)
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: test
+
+  # Dependencies
+  sync:
+    desc: Sync dependencies
+    cmd: uv sync
+
+  # Docker
+  docker:build:
+    desc: Build Docker image
+    cmd: docker build -t chat-api:local .
+
+  docker:run:
+    desc: Run Docker container
+    cmd: docker run -p 8000:8000 --env-file .env chat-api:local
