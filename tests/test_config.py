@@ -6,9 +6,9 @@ from app.core.config import Settings, get_settings
 def test_settings_defaults():
     """Test Settings has correct defaults."""
     settings = Settings()
-    assert settings.llm_api_url == "http://localhost:4000"
-    assert settings.chat_model == "openai/gpt-4.1"
-    assert settings.project_name == "ChatMicroservice"
+    assert settings.openrouter_api_url == "https://openrouter.ai/api/v1/chat/completions"
+    assert settings.openrouter_model == "anthropic/claude-sonnet-4"
+    assert settings.environment == "development"
 
 
 def test_get_settings_cached():

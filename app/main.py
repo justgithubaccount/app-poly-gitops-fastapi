@@ -5,11 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import api_router
-from .core.config import get_settings
 from .core.db import init_db
 from .core.health import health_router
-from .integrations.behavior_manager import BehaviorManager
-from .integrations.notion_client import NotionClient
 from .logger import enrich_context
 from .observability.tracing import setup_tracing
 
@@ -17,8 +14,6 @@ from .observability.tracing import setup_tracing
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan event handler for startup and shutdown."""
-    settings = get_settings()
-
     # Startup: init database
     enrich_context(event="startup_init_db_start").info("Starting database initialization")
     try:
@@ -27,25 +22,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         enrich_context(event="startup_init_db_error", error=str(e)).error("Database initialization failed")
         raise
-
-    # Startup: load behavior from Notion (if configured)
-    if settings.notion_token and settings.notion_page_id:
-        enrich_context(event="notion_config_found").info("Notion configuration found")
-        notion_client = NotionClient(settings.notion_token)
-        behavior_manager = BehaviorManager(notion_client, settings.notion_page_id)
-        app.state.behavior_manager = behavior_manager
-
-        enrich_context(event="startup_behavior_start").info("Starting behavior loading")
-        try:
-            await behavior_manager.refresh()
-            enrich_context(event="startup_behavior_success").info("Behavior loading completed")
-        except Exception as e:
-            enrich_context(event="startup_behavior_error", error=str(e)).error("Behavior loading failed")
-            # Не падаем на этой ошибке
-    else:
-        enrich_context(event="notion_config_missing").info(
-            "Notion configuration not found, skipping behavior loading"
-        )
 
     enrich_context(event="startup").info("Application initialized")
 
