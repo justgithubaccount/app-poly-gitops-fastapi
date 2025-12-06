@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.1...v1.0.2) (2025-12-06)
+
+### 🐛 Bug Fixes
+
+* **ci:** add id-token and attestations permissions for ghcr push ([84f0fc4](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/84f0fc4d96201d60e52c4ea7c8990247072c0210))
+
 ## [1.0.1](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.0...v1.0.1) (2025-12-06)
 
 ### 🐛 Bug Fixes
