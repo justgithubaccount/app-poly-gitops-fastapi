@@ -1,3 +1,14 @@
+## [1.0.1](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.0...v1.0.1) (2025-12-06)
+
+### 🐛 Bug Fixes
+
+* trigger docker build after permissions fix ([1a6858d](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/1a6858d2044cfe763b153e0a16fc115bb3d062d9))
+
+### 🔧 CI/CD
+
+* retry docker push after permissions fix ([07dafb6](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/07dafb6d3eacc5f92c041903768c4452a3fb1f81))
+* trigger rebuild after permissions fix ([e5ecf14](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/e5ecf14d71117555c1578a9d46d0f43f037f60c1))
+
 ## 1.0.0 (2025-12-06)
 
 ### 🚀 Features
