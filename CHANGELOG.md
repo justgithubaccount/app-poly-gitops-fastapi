@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.2...v1.0.3) (2025-12-06)
+
+### 🐛 Bug Fixes
+
+* **ci:** use github.repository for ghcr image name ([c2f5b8e](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/c2f5b8ed78f70d48042f6724a0b5c1b05de96455))
+
 ## [1.0.2](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.1...v1.0.2) (2025-12-06)
 
 ### 🐛 Bug Fixes
