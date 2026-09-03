@@ -92,7 +92,9 @@ app/
 ## Связанные репозитории
 
 - **[app-crewai-cluster](https://github.com/justgithubaccount/app-crewai-cluster)** — CrewAI агенты для инфраструктуры
-- **[app-release](https://github.com/justgithubaccount/app-release)** — Helm charts и GitOps манифесты
+- **[app-poly-gitops-helm](https://github.com/justgithubaccount/app-poly-gitops-helm)** — Helm-чарт этого сервиса
+- **[app-poly-gitops-k8s](https://github.com/justgithubaccount/app-poly-gitops-k8s)** — ArgoCD-манифесты и GitOps
+- **[app-mono-gitops](https://github.com/justgithubaccount/app-mono-gitops)** — монорепа, из которой выделен сервис (архив)
 
 ## Разработка
 
@@ -124,12 +126,6 @@ GitHub Actions (`.github/workflows/`):
 - **OpenTelemetry** (traces, logs, metrics)
 - **OpenRouter** (LLM provider)
 - **uv** (package manager)
-
-## Дополнительно
-
-Контекст и документация в `misc/`:
-- `misc/context/` — справочные материалы
-- `misc/README-*.md` — концепция и задачи
 
 ## License
 

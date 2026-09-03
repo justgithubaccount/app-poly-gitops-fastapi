@@ -48,10 +48,11 @@ def setup_tracing(app) -> None:
         "k8s.pod.uid": os.getenv("K8S_POD_UID", "unknown"),
     })
 
-    # OTLP endpoint - в production используем collector sidecar
+    # OTLP endpoint. По умолчанию localhost, чтобы сервис поднимался вне кластера;
+    # в кластере адрес коллектора приходит через OTEL_EXPORTER_OTLP_ENDPOINT.
     otlp_endpoint = os.getenv(
         "OTEL_EXPORTER_OTLP_ENDPOINT",
-        "http://otel-collector.observability.svc.cluster.local:4318"
+        "http://localhost:4318"
     )
 
     # Для HTTP протокола добавляем правильные пути
