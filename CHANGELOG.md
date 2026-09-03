@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.1.0...v1.1.1) (2026-09-03)
+
+### 🐛 Bug Fixes
+
+* make service runnable outside the cluster ([adcac60](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/adcac60313ee1a0817d54d58a20f5a9c47dba753))
+
 ## [1.1.0](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.0.3...v1.1.0) (2025-12-06)
 
 ### 🚀 Features
