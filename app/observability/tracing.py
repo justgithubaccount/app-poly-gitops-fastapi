@@ -33,6 +33,19 @@ def setup_tracing(app) -> None:
     Настройка OpenTelemetry для traces и logs согласно CNCF практикам.
     Production-ready конфигурация для Kubernetes.
     """
+    sdk_disabled = os.getenv("OTEL_SDK_DISABLED", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip().rstrip("/")
+    traces_enabled = os.getenv("OTEL_TRACES_EXPORTER", "none").strip().lower() == "otlp"
+    logs_enabled = os.getenv("OTEL_LOGS_EXPORTER", "none").strip().lower() == "otlp"
+
+    if sdk_disabled or not otlp_endpoint or not (traces_enabled or logs_enabled):
+        logging.getLogger(__name__).info("OpenTelemetry export disabled")
+        return
+
     # Resource с метаданными сервиса и Kubernetes
     resource = Resource(attributes={
         "service.name": os.getenv("OTEL_SERVICE_NAME", "chat-api"),
@@ -48,64 +61,53 @@ def setup_tracing(app) -> None:
         "k8s.pod.uid": os.getenv("K8S_POD_UID", "unknown"),
     })
 
-    # OTLP endpoint. По умолчанию localhost, чтобы сервис поднимался вне кластера;
-    # в кластере адрес коллектора приходит через OTEL_EXPORTER_OTLP_ENDPOINT.
-    otlp_endpoint = os.getenv(
-        "OTEL_EXPORTER_OTLP_ENDPOINT",
-        "http://localhost:4318"
-    )
-
     # Для HTTP протокола добавляем правильные пути
     traces_endpoint = f"{otlp_endpoint}/v1/traces" if not otlp_endpoint.endswith("/v1/traces") else otlp_endpoint
     logs_endpoint = f"{otlp_endpoint}/v1/logs" if not otlp_endpoint.endswith("/v1/logs") else otlp_endpoint
 
     # === TRACES ===
-    provider = TracerProvider(resource=resource)
+    provider = None
+    if traces_enabled:
+        provider = TracerProvider(resource=resource)
 
-    # Создаем exporter без deprecated параметров
-    otlp_trace_exporter = OTLPSpanExporter(
-        endpoint=traces_endpoint,
-        # Headers для авторизации если нужно
-        headers={"X-Scope-OrgID": os.getenv("GRAFANA_TENANT_ID", "1")} if os.getenv("GRAFANA_TENANT_ID") else None
-    )
+        otlp_trace_exporter = OTLPSpanExporter(
+            endpoint=traces_endpoint,
+            headers={"X-Scope-OrgID": os.getenv("GRAFANA_TENANT_ID", "1")}
+            if os.getenv("GRAFANA_TENANT_ID")
+            else None,
+        )
 
-    # BatchSpanProcessor для производительности
-    trace_processor = BatchSpanProcessor(
-        otlp_trace_exporter,
-        max_queue_size=2048,
-        max_export_batch_size=512,
-        schedule_delay_millis=5000,
-    )
-    provider.add_span_processor(trace_processor)
-    trace.set_tracer_provider(provider)
+        trace_processor = BatchSpanProcessor(
+            otlp_trace_exporter,
+            max_queue_size=2048,
+            max_export_batch_size=512,
+            schedule_delay_millis=5000,
+        )
+        provider.add_span_processor(trace_processor)
+        trace.set_tracer_provider(provider)
 
     # === LOGS ===
-    log_provider = LoggerProvider(resource=resource)
-
-    otlp_log_exporter = OTLPLogExporter(
-        endpoint=logs_endpoint,
-        headers={"X-Scope-OrgID": os.getenv("GRAFANA_TENANT_ID", "1")} if os.getenv("GRAFANA_TENANT_ID") else None
-    )
-
-    log_processor = BatchLogRecordProcessor(
-        otlp_log_exporter,
-        max_queue_size=2048,
-        max_export_batch_size=512,
-        schedule_delay_millis=5000,
-    )
-    log_provider.add_log_record_processor(log_processor)
-    set_logger_provider(log_provider)
-
-    # Подключаем OpenTelemetry handler к root logger
-    handler = LoggingHandler(
-        level=logging.INFO,
-        logger_provider=log_provider
-    )
-
-    # Настройка логирования
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(handler)
+    if logs_enabled:
+        log_provider = LoggerProvider(resource=resource)
+
+        otlp_log_exporter = OTLPLogExporter(
+            endpoint=logs_endpoint,
+            headers={"X-Scope-OrgID": os.getenv("GRAFANA_TENANT_ID", "1")}
+            if os.getenv("GRAFANA_TENANT_ID")
+            else None,
+        )
+
+        log_processor = BatchLogRecordProcessor(
+            otlp_log_exporter,
+            max_queue_size=2048,
+            max_export_batch_size=512,
+            schedule_delay_millis=5000,
+        )
+        log_provider.add_log_record_processor(log_processor)
+        set_logger_provider(log_provider)
+        root_logger.addHandler(LoggingHandler(level=logging.INFO, logger_provider=log_provider))
 
     # JSON logging для production
     if os.getenv("ENVIRONMENT") == "production":
@@ -144,11 +146,12 @@ def setup_tracing(app) -> None:
         root_logger.addHandler(console_handler)
 
     # FastAPI instrumentation
-    FastAPIInstrumentor().instrument_app(
-        app,
-        tracer_provider=provider,
-        server_request_hook=server_request_hook
-    )
+    if provider is not None:
+        FastAPIInstrumentor().instrument_app(
+            app,
+            tracer_provider=provider,
+            server_request_hook=server_request_hook,
+        )
 
     # Log успешной инициализации
     logger = logging.getLogger(__name__)

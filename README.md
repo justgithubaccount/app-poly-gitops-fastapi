@@ -66,7 +66,9 @@ cp .env.example .env
 | `NOTION_TOKEN` | Notion API token (опционально) | - |
 | `NOTION_PAGE_ID` | Notion page ID (опционально) | - |
 | `OTEL_SERVICE_NAME` | Имя сервиса для трейсинга | `chat-api` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP endpoint | `http://localhost:4318` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP/HTTP endpoint; export is disabled when empty | - |
+| `OTEL_TRACES_EXPORTER` | Set to `otlp` to export traces | `none` |
+| `OTEL_LOGS_EXPORTER` | Set to `otlp` to export logs | `none` |
 
 ## Структура проекта
 

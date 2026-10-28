@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -36,7 +37,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Chat Microservice",
-        version="0.1.0",
+        version=os.getenv("APP_VERSION", "0.1.0"),
         lifespan=lifespan,
     )
 
