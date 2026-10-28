@@ -1,3 +1,9 @@
+## [1.1.2](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.1.1...v1.1.2) (2026-10-28)
+
+### 🐛 Bug Fixes
+
+* honor OpenTelemetry export configuration ([#4](https://github.com/justgithubaccount/app-poly-gitops-fastapi/issues/4)) ([6710cf7](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/6710cf76939724f13c109fd2047d1f950eba2723))
+
 ## [1.1.1](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.1.0...v1.1.1) (2026-09-03)
 
 ### 🐛 Bug Fixes
