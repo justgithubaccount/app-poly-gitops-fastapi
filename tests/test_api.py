@@ -1,5 +1,9 @@
 """API endpoint tests."""
 
+from fastapi.testclient import TestClient
+
+from app.main import create_app
+
 
 def test_health_endpoint(client):
     """Test GET /health returns ok."""
@@ -16,6 +20,15 @@ def test_root_endpoint(client):
     assert data["status"] == "ok"
     assert data["service"] == "Chat Microservice"
     assert "version" in data
+
+
+def test_root_endpoint_uses_deployed_app_version(monkeypatch):
+    monkeypatch.setenv("APP_VERSION", "1.2.3")
+
+    with TestClient(create_app()) as versioned_client:
+        response = versioned_client.get("/")
+
+    assert response.json()["version"] == "1.2.3"
 
 
 def test_chat_endpoint(client, mock_openrouter):
