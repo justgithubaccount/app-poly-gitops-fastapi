@@ -246,8 +246,18 @@ class OpenRouterClient:
             if "error" in response:
                 raise LLMProviderError(str(response["error"]))
 
-            # Извлекаем текст ответа
-            return response["choices"][0]["message"]["content"]
+            # A transport-level success does not guarantee a valid provider
+            # payload.  Keep malformed upstream responses on the same 502 path
+            # as explicit provider errors instead of leaking an internal 500.
+            try:
+                content = response["choices"][0]["message"]["content"]
+            except (KeyError, IndexError, TypeError) as exc:
+                raise LLMProviderError("Malformed response from LLM provider") from exc
+
+            if not isinstance(content, str) or not content:
+                raise LLMProviderError("Malformed response from LLM provider")
+
+            return content
 
         finally:
             # Восстанавливаем оригинальный ключ

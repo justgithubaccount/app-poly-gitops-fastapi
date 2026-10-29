@@ -58,6 +58,24 @@ def test_chat_endpoint_reports_provider_failure_as_bad_gateway(client, monkeypat
     assert response.json() == {"detail": "AI provider unavailable"}
 
 
+def test_chat_endpoint_reports_malformed_provider_response_as_bad_gateway(
+    client, monkeypatch
+):
+    """A malformed successful response is still a provider failure."""
+    monkeypatch.setattr(
+        "app.core.llm_client.OpenRouterClient.chat_completion",
+        AsyncMock(return_value={"choices": []}),
+    )
+
+    response = client.post(
+        "/api/v1/chat",
+        json={"messages": [{"role": "user", "content": "test"}]},
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "AI provider unavailable"}
+
+
 def test_chat_endpoint_empty_messages(client, mock_openrouter):
     """Test POST /api/v1/chat with empty messages list."""
     response = client.post("/api/v1/chat", json={
@@ -131,6 +149,27 @@ def test_project_history(client, mock_openrouter):
         ("user", "test message"),
         ("assistant", "Mocked response from AI"),
     ]
+
+
+def test_failed_project_chat_does_not_create_history(client, monkeypatch):
+    """Provider failures must not leave a request that looks completed."""
+    project = client.post(
+        "/api/v1/projects", json={"name": "Failed chat"}
+    ).json()
+    monkeypatch.setattr(
+        "app.core.llm_client.OpenRouterClient.chat_completion",
+        AsyncMock(return_value={"error": "provider unavailable"}),
+    )
+
+    response = client.post(
+        f"/api/v1/projects/{project['id']}/chat",
+        json={"messages": [{"role": "user", "content": "test"}]},
+    )
+
+    assert response.status_code == 502
+    history = client.get(f"/api/v1/projects/{project['id']}/history")
+    assert history.status_code == 200
+    assert history.json() == []
 
 
 def test_behavior_schema_not_loaded(client):
