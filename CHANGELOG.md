@@ -1,3 +1,13 @@
+## [1.1.3](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.1.2...v1.1.3) (2026-10-29)
+
+### 🐛 Bug Fixes
+
+* preserve successful chat transcripts ([bd83975](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/bd8397575d0bde8b190a0efa811dfc50da460a29))
+
+### ✅ Tests
+
+* handle malformed provider responses ([370a5a9](https://github.com/justgithubaccount/app-poly-gitops-fastapi/commit/370a5a9f82e03a5ddc9b79d26b303a8cb1173044))
+
 ## [1.1.2](https://github.com/justgithubaccount/app-poly-gitops-fastapi/compare/v1.1.1...v1.1.2) (2026-10-28)
 
 ### 🐛 Bug Fixes
