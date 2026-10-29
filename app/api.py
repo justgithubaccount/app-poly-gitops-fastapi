@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from app.logger import enrich_context
 
 from .core.db import get_session
+from .core.llm_client import LLMProviderError
 from .core.project_memory import ProjectMemory
 from .integrations.behavior_manager import BehaviorManager
 from .models import ChatHistory, ChatHistoryDB, Project, StoredChatMessage
@@ -18,6 +19,7 @@ from .schemas import (
     ChatResponse,
     CreateProjectRequest,
     ProjectInfo,
+    Role,
 )
 from .services.chat_service import ChatService
 
@@ -63,6 +65,12 @@ async def chat_endpoint(
             req.messages, req.user_api_key, trace_id=trace_id
         )
         return ChatResponse(reply=reply)
+
+    except LLMProviderError as e:
+        log.bind(event="chat_provider_error", error=str(e)).error(
+            "LLM provider request failed"
+        )
+        raise HTTPException(status_code=502, detail="AI provider unavailable")
 
     except Exception as e:
         log.bind(event="chat_api_error", error=str(e)).error("Standard chat request failed")
@@ -123,10 +131,15 @@ async def chat_in_project(
         if not project:
             raise ValueError(f"Проект {project_id} не найден")
 
+        reply = await chat_service.get_ai_reply(
+            req.messages, req.user_api_key, project_id=project_id, trace_id=trace_id
+        )
+
         chat_messages = [
             StoredChatMessage(role=m.role, content=m.content)
             for m in req.messages
         ]
+        chat_messages.append(StoredChatMessage(role=Role.assistant, content=reply))
         history_db = ChatHistoryDB(
             project_id=project_id,
             messages=json.dumps([m.model_dump() for m in chat_messages], default=json_serial),
@@ -135,15 +148,17 @@ async def chat_in_project(
         )
         session.add(history_db)
         session.commit()
-
-        reply = await chat_service.get_ai_reply(
-            req.messages, req.user_api_key, project_id=project_id, trace_id=trace_id
-        )
         return ChatResponse(reply=reply)
 
     except ValueError as e:
         log.bind(event="project_not_found").warning("Project not found")
         raise HTTPException(status_code=404, detail=str(e))
+
+    except LLMProviderError as e:
+        log.bind(event="project_chat_provider_error", error=str(e)).error(
+            "LLM provider request failed"
+        )
+        raise HTTPException(status_code=502, detail="AI provider unavailable")
 
     except Exception as e:
         log.bind(event="project_chat_error", error=str(e)).error("Project chat failed")
