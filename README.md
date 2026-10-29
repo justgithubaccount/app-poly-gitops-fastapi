@@ -6,7 +6,7 @@ FastAPI микросервис для LLM-чатов с управлением �
 
 - 🗨️ **Chat API** — standalone и project-scoped чаты
 - 📁 **Проекты** — группировка чатов по проектам
-- 📜 **История** — сохранение истории с trace_id/span_id
+- 📜 **История** — сохранение успешного transcript (входные сообщения и ответ модели) с trace_id/span_id
 - 🔗 **Notion** — загрузка behavior-схем агентов
 - 📊 **Observability** — OpenTelemetry traces/logs/metrics
 - 🐳 **Docker** — контейнеризация с uv
@@ -22,6 +22,9 @@ FastAPI микросервис для LLM-чатов с управлением �
 | `GET` | `/api/v1/projects/{id}/history` | История чата проекта |
 | `GET` | `/api/v1/behavior/schema` | Текущая схема поведения |
 | `GET` | `/health` | Health check |
+
+Ошибки LLM-провайдера возвращаются как HTTP `502`; они не маскируются под
+успешный `200` и не создают запись истории проекта.
 
 ## Запуск
 

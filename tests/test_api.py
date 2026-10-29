@@ -1,5 +1,7 @@
 """API endpoint tests."""
 
+from unittest.mock import AsyncMock
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -38,6 +40,22 @@ def test_chat_endpoint(client, mock_openrouter):
     })
     assert response.status_code == 200
     assert "reply" in response.json()
+
+
+def test_chat_endpoint_reports_provider_failure_as_bad_gateway(client, monkeypatch):
+    """A provider failure must not look like a successful chat reply."""
+    monkeypatch.setattr(
+        "app.core.llm_client.OpenRouterClient.chat_completion",
+        AsyncMock(return_value={"error": "provider unavailable"}),
+    )
+
+    response = client.post(
+        "/api/v1/chat",
+        json={"messages": [{"role": "user", "content": "test"}]},
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "AI provider unavailable"}
 
 
 def test_chat_endpoint_empty_messages(client, mock_openrouter):
@@ -106,7 +124,13 @@ def test_project_history(client, mock_openrouter):
     # Get history
     response = client.get(f"/api/v1/projects/{project_id}/history")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert [
+        (message["role"], message["content"])
+        for message in response.json()[0]["messages"]
+    ] == [
+        ("user", "test message"),
+        ("assistant", "Mocked response from AI"),
+    ]
 
 
 def test_behavior_schema_not_loaded(client):

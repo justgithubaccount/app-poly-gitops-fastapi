@@ -33,6 +33,10 @@ llm_tokens_counter = meter.create_counter(
     unit="1"
 )
 
+
+class LLMProviderError(RuntimeError):
+    """The configured LLM provider could not produce a valid reply."""
+
 class OpenRouterClient:
     def __init__(self):
         # Из секрета
@@ -240,7 +244,7 @@ class OpenRouterClient:
 
             # Проверяем на ошибки
             if "error" in response:
-                return f"Ошибка API: {response['error']}"
+                raise LLMProviderError(str(response["error"]))
 
             # Извлекаем текст ответа
             return response["choices"][0]["message"]["content"]

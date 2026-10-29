@@ -1,7 +1,13 @@
 name: Python Tests
 on:
   pull_request:
-    paths: ['app/**', 'tests/**', 'pyproject.toml']
+    paths:
+      - 'app/**'
+      - 'tests/**'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/test.yaml'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,3 +27,17 @@ jobs:
         run: uv run mypy app --ignore-missing-imports
       - name: Lint
         run: uv run ruff check app
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: app-poly-gitops-fastapi:test
+      - name: Verify offline runtime startup
+        run: tests/test_container_runtime.sh app-poly-gitops-fastapi:test
