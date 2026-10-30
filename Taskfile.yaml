@@ -22,6 +22,10 @@ tasks:
   # Linting
   lint:
     desc: Run ruff linter
+    cmd: uv run ruff check app/ tests/
+
+  lint:fix:
+    desc: Apply safe Ruff fixes
     cmd: uv run ruff check app/ tests/ --fix
 
   typecheck:
@@ -39,7 +43,7 @@ tasks:
   # Dependencies
   sync:
     desc: Sync dependencies
-    cmd: uv sync
+    cmd: uv sync --locked --dev
 
   # Docker
   docker:build:
@@ -48,4 +52,4 @@ tasks:
 
   docker:run:
     desc: Run Docker container
-    cmd: docker run -p 8000:8000 --env-file .env chat-api:local
+    cmd: docker run --rm -p 8000:8000 --env-file .env chat-api:local

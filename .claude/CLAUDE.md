@@ -4,7 +4,7 @@
 
 ## О проекте
 
-**Chat API Microservice** — FastAPI сервис для LLM-чатов с проектами, историей и Notion интеграцией.
+**Chat API Microservice** — FastAPI сервис для LLM-чатов с проектами, историей и опциональной загрузкой behavior из Notion.
 
 ## Команды
 
@@ -15,14 +15,17 @@ uv run uvicorn app.main:app --reload
 # Тесты
 OTEL_SDK_DISABLED=true uv run pytest tests/ -v
 
-# Линтер
+# Линтер (не изменяет файлы)
+uv run ruff check app/ tests/
+
+# Явное применение исправлений Ruff
 uv run ruff check app/ tests/ --fix
 
 # Type checker
 uv run mypy app/ --ignore-missing-imports
 
 # Все проверки
-uv run ruff check app/ tests/ --fix && uv run mypy app/ --ignore-missing-imports && OTEL_SDK_DISABLED=true uv run pytest tests/ -v
+task check
 ```
 
 ## Структура
@@ -36,8 +39,7 @@ app/
 │   ├── config.py        # Pydantic Settings
 │   ├── db.py            # SQLModel database
 │   ├── health.py        # Health endpoint
-│   ├── llm_client.py    # OpenRouter client
-│   └── project_memory.py # In-memory fallback
+│   └── llm_client.py    # OpenRouter client
 ├── models/
 │   ├── chat.py          # Chat models
 │   └── db_models.py     # SQLModel entities
@@ -76,7 +78,7 @@ app/
 - uv (package manager)
 - structlog (logging)
 - httpx (HTTP client)
-- notion-client (Notion API)
+- httpx + PyYAML (опциональная Notion/behavior интеграция)
 
 ## Конвенции
 
@@ -85,6 +87,8 @@ app/
 - FastAPI: lifespan context manager вместо `@app.on_event`
 - Тесты: `OTEL_SDK_DISABLED=true` для отключения трейсинга
 - Логирование: `enrich_context(event="name").info("message")`
+- SQLModel — единственное хранилище проектов и истории; in-memory fallback отсутствует
+- NotionClient/BehaviorManager — опциональная заготовка, по умолчанию не подключена
 
 ## Связанные репозитории
 
