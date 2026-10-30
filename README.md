@@ -1,136 +1,78 @@
-# Chat API Microservice
+# Chat API
 
-FastAPI микросервис для LLM-чатов с управлением проектами, историей и интеграцией с Notion.
+FastAPI service for LLM chat, project-scoped transcripts, and OpenTelemetry
+instrumentation. It is the application backend in the `app-poly-gitops`
+engineering lab.
 
-## Возможности
+## Overview
 
-- 🗨️ **Chat API** — standalone и project-scoped чаты
-- 📁 **Проекты** — группировка чатов по проектам
-- 📜 **История** — сохранение успешного transcript (входные сообщения и ответ модели) с trace_id/span_id
-- 🔗 **Notion** — загрузка behavior-схем агентов
-- 📊 **Observability** — OpenTelemetry traces/logs/metrics
-- 🐳 **Docker** — контейнеризация с uv
+The service exposes standalone chat and project workflows. Projects and
+successful project transcripts are stored through SQLModel. SQLite is the local
+default; `DATABASE_URL` can point to PostgreSQL.
 
-## API Endpoints
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Service liveness |
+| `POST` | `/api/v1/chat` | Standalone chat |
+| `POST` | `/api/v1/projects` | Create a project |
+| `GET` | `/api/v1/projects` | List projects |
+| `POST` | `/api/v1/projects/{id}/chat` | Chat in a project |
+| `GET` | `/api/v1/projects/{id}/history` | Read successful project transcripts |
+| `GET` | `/api/v1/behavior/schema` | Read the optional loaded behavior schema |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/chat` | Standalone чат |
-| `POST` | `/api/v1/projects` | Создать проект |
-| `GET` | `/api/v1/projects` | Список проектов |
-| `POST` | `/api/v1/projects/{id}/chat` | Чат в контексте проекта |
-| `GET` | `/api/v1/projects/{id}/history` | История чата проекта |
-| `GET` | `/api/v1/behavior/schema` | Текущая схема поведения |
-| `GET` | `/health` | Health check |
+Project history is written only after the model returns successfully and includes
+the submitted messages, assistant reply, timestamp, and available trace/span IDs.
+Provider failures return HTTP `502` and are not added to project history.
 
-Ошибки LLM-провайдера возвращаются как HTTP `502`; они не маскируются под
-успешный `200` и не создают запись истории проекта.
+## Getting started
 
-## Запуск
+Requirements: Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
-### Локально (с uv)
-
-```bash
-# Установить зависимости
-uv sync
-
-# Запустить
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Docker
-
-```bash
-docker build -t chat-api .
-docker run -p 8000:8000 --env-file .env chat-api
-```
-
-### Docker Compose
-
-```bash
-docker compose up --build
-```
-
-## Конфигурация
-
-Скопируйте `.env.example` в `.env` и настройте:
-
-```bash
+~~~bash
 cp .env.example .env
-```
+uv sync --locked --dev
+uv run uvicorn app.main:app --reload
+~~~
 
-**Основные переменные:**
+Open `http://127.0.0.1:8000/docs` for the generated API documentation.
+Configure `OPENROUTER_API_KEY` for real model requests. The provider URL and
+model are controlled by `OPENROUTER_API_URL` and `OPENROUTER_MODEL`.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENROUTER_API_KEY` | OpenRouter API key | - |
-| `OPENROUTER_MODEL` | LLM модель | `anthropic/claude-opus-4` |
-| `DATABASE_URL` | URL базы данных | `sqlite:///db.sqlite3` |
-| `NOTION_TOKEN` | Notion API token (опционально) | - |
-| `NOTION_PAGE_ID` | Notion page ID (опционально) | - |
-| `OTEL_SERVICE_NAME` | Имя сервиса для трейсинга | `chat-api` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP/HTTP endpoint; export is disabled when empty | - |
-| `OTEL_TRACES_EXPORTER` | Set to `otlp` to export traces | `none` |
-| `OTEL_LOGS_EXPORTER` | Set to `otlp` to export logs | `none` |
+To run the container instead:
 
-## Структура проекта
+~~~bash
+docker build -t chat-api .
+docker run --rm -p 8000:8000 --env-file .env chat-api
+~~~
 
-```
-app/
-├── main.py              # FastAPI app factory
-├── api.py               # API routes (/api/v1)
-├── logger.py            # Structured logging (structlog)
-├── core/
-│   ├── config.py        # Pydantic Settings
-│   ├── db.py            # SQLModel database
-│   ├── health.py        # Health endpoint
-│   ├── llm_client.py    # OpenRouter client
-│   └── project_memory.py
-├── models/              # SQLModel & Pydantic models
-├── schemas/             # API request/response schemas
-├── services/            # Business logic (ChatService)
-├── integrations/        # Notion, BehaviorManager
-├── behavior/            # Agent behavior definitions
-└── observability/       # OpenTelemetry setup
-```
+## Development
 
-## Связанные репозитории
+~~~bash
+OTEL_SDK_DISABLED=true uv run pytest tests/ -v
+uv run ruff check app tests
+uv run mypy app --ignore-missing-imports
+docker build -t app-poly-gitops-fastapi:test .
+bash tests/test_container_runtime.sh app-poly-gitops-fastapi:test
+~~~
 
-- **[app-crewai-cluster](https://github.com/justgithubaccount/app-crewai-cluster)** — CrewAI агенты для инфраструктуры
-- **[app-poly-gitops-helm](https://github.com/justgithubaccount/app-poly-gitops-helm)** — Helm-чарт этого сервиса
-- **[app-poly-gitops-k8s](https://github.com/justgithubaccount/app-poly-gitops-k8s)** — ArgoCD-манифесты и GitOps
-- **[app-mono-gitops](https://github.com/justgithubaccount/app-mono-gitops)** — монорепа, из которой выделен сервис (архив)
+The CI workflow runs the Python checks and verifies that the built container
+starts without external services. Releases from `main` publish versioned images
+to GitHub Container Registry.
 
-## Разработка
+## Repository structure
 
-```bash
-# Тесты
-uv run pytest tests/ -v
+- `app/` — API routes, persistence, provider client, and telemetry setup
+- `tests/` — unit, contract, observability, and container-runtime tests
+- `Dockerfile` and `docker-compose.yml` — container entrypoints
+- `Taskfile.yaml` — local development commands
 
-# Линтер
-uv run ruff check app/ tests/
+## Related repositories
 
-# Type checker
-uv run mypy app/
-
-# Все проверки
-uv run ruff check app/ tests/ --fix && uv run mypy app/ --ignore-missing-imports && uv run pytest tests/ -v
-```
-
-## CI/CD
-
-GitHub Actions (`.github/workflows/`):
-- **test.yaml** — pytest, mypy, ruff на PR
-- **release.yaml** — semantic release
-
-## Tech Stack
-
-- **Python** 3.11+
-- **FastAPI** 0.116+
-- **SQLModel** (SQLAlchemy + Pydantic)
-- **OpenTelemetry** (traces, logs, metrics)
-- **OpenRouter** (LLM provider)
-- **uv** (package manager)
+- [app-poly-gitops-ui](https://github.com/justgithubaccount/app-poly-gitops-ui) — browser client
+- [app-poly-gitops-helm](https://github.com/justgithubaccount/app-poly-gitops-helm) — Kubernetes package
+- [app-poly-gitops-k8s](https://github.com/justgithubaccount/app-poly-gitops-k8s) — GitOps desired state
+- [app-poly-gitops-crewai](https://github.com/justgithubaccount/app-poly-gitops-crewai) — Kubernetes automation service
+- [app-mono-gitops](https://github.com/justgithubaccount/app-mono-gitops) — archived predecessor
 
 ## License
 
