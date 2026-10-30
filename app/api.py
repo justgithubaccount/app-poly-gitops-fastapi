@@ -11,7 +11,6 @@ from app.logger import enrich_context
 
 from .core.db import get_session
 from .core.llm_client import LLMProviderError
-from .core.project_memory import ProjectMemory
 from .integrations.behavior_manager import BehaviorManager
 from .models import ChatHistory, ChatHistoryDB, Project, StoredChatMessage
 from .schemas import (
@@ -28,7 +27,6 @@ api_router = APIRouter(
     tags=["chat"]
 )
 
-memory = ProjectMemory()
 meter = metrics.get_meter(__name__)
 chat_counter = meter.create_counter("chat_requests_total")
 

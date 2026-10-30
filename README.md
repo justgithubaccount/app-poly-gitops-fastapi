@@ -24,6 +24,11 @@ Project history is written only after the model returns successfully and include
 the submitted messages, assistant reply, timestamp, and available trace/span IDs.
 Provider failures return HTTP `502` and are not added to project history.
 
+The SQLModel database is the only project and history store. The behavior
+models, lightweight Notion HTTP client, `BehaviorManager`, and
+`/api/v1/behavior/schema` are optional integration scaffolding: the default app
+does not load a behavior document, so the endpoint intentionally returns `404`.
+
 ## Getting started
 
 Requirements: Python 3.11+ and [uv](https://docs.astral.sh/uv/).
@@ -51,9 +56,13 @@ docker run --rm -p 8000:8000 --env-file .env chat-api
 OTEL_SDK_DISABLED=true uv run pytest tests/ -v
 uv run ruff check app tests
 uv run mypy app --ignore-missing-imports
+docker compose config --quiet
 docker build -t app-poly-gitops-fastapi:test .
 bash tests/test_container_runtime.sh app-poly-gitops-fastapi:test
 ~~~
+
+The equivalent non-mutating aggregate is `task check`. `task lint:fix` is the
+explicit source-modifying lint command.
 
 The CI workflow runs the Python checks and verifies that the built container
 starts without external services. Releases from `main` publish versioned images
