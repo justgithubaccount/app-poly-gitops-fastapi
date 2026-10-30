@@ -1,3 +1,4 @@
+import json
 import tomllib
 from pathlib import Path
 
@@ -57,3 +58,15 @@ def test_release_toolchain_uses_supported_node() -> None:
     release_workflow = (ROOT / ".github" / "workflows" / "release.yaml").read_text()
 
     assert "node-version: '22.22.0'" in release_workflow
+
+
+def test_release_lock_uses_patched_actions_http_stack() -> None:
+    lock = json.loads((ROOT / "package-lock.json").read_text())
+    packages = lock["packages"]
+
+    assert packages["node_modules/@actions/http-client"]["version"] == "4.0.1"
+    assert (
+        packages["node_modules/@actions/http-client/node_modules/undici"]["version"]
+        == "6.29.1"
+    )
+    assert "node_modules/@fastify/busboy" not in packages
