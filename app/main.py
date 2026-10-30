@@ -15,7 +15,6 @@ from .observability.tracing import setup_tracing
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan event handler for startup and shutdown."""
-    # Startup: init database
     enrich_context(event="startup_init_db_start").info("Starting database initialization")
     try:
         init_db()
@@ -26,9 +25,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     enrich_context(event="startup").info("Application initialized")
 
-    yield  # Application runs here
+    yield
 
-    # Shutdown
     enrich_context(event="shutdown").info("Application shutting down")
 
 
@@ -43,7 +41,6 @@ def create_app() -> FastAPI:
 
     enrich_context(event="middleware_setup_start").info("Setting up middleware")
 
-    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -54,13 +51,11 @@ def create_app() -> FastAPI:
 
     enrich_context(event="routes_setup_start").info("Setting up routes")
 
-    # Routes
     app.include_router(api_router)
     app.include_router(health_router)
 
     enrich_context(event="tracing_setup_start").info("Setting up tracing")
 
-    # Tracing
     setup_tracing(app)
 
     @app.get("/")

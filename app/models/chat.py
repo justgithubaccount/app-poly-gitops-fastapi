@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Импортируем Role из schemas, избегаем дублирования
 from ..schemas.chat import Role
 
 

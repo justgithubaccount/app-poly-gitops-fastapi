@@ -4,7 +4,6 @@ from typing import Any, Dict, cast
 import structlog
 from opentelemetry import trace
 
-# Context variables для хранения дополнительных атрибутов
 log_context: ContextVar[Dict[str, Any]] = ContextVar('log_context', default={})
 
 class EnrichedLogger:
@@ -23,14 +22,12 @@ class EnrichedLogger:
             event_dict['trace_id'] = format(span_context.trace_id, '032x')
             event_dict['span_id'] = format(span_context.span_id, '016x')
 
-        # Добавляем контекстные переменные
         event_dict.update(log_context.get())
 
         return event_dict
 
     def bind(self, **kwargs) -> 'EnrichedLogger':
         """Добавляет контекст к логгеру."""
-        # Приводим к нужному типу для MyPy
         bound_logger = cast(structlog.BoundLogger, self.logger.bind(**kwargs))
         return EnrichedLogger(bound_logger)
 
@@ -50,7 +47,6 @@ class EnrichedLogger:
         kwargs = self._add_trace_context(kwargs)
         self.logger.debug(msg, **kwargs)
 
-# Инициализация structlog
 structlog.configure(
     processors=[
         structlog.stdlib.filter_by_level,
@@ -68,7 +64,6 @@ structlog.configure(
     cache_logger_on_first_use=True,
 )
 
-# Базовый логгер
 base_logger = structlog.get_logger()
 
 def enrich_context(**kwargs) -> EnrichedLogger:
@@ -76,7 +71,6 @@ def enrich_context(**kwargs) -> EnrichedLogger:
     Создает логгер с обогащенным контекстом.
     Совместимо с существующим кодом.
     """
-    # Приводим к нужному типу для MyPy
     bound_logger = cast(structlog.BoundLogger, base_logger.bind(**kwargs))
     return EnrichedLogger(bound_logger)
 
