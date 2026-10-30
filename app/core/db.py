@@ -4,14 +4,13 @@ from app.core.config import get_settings
 
 DATABASE_URL = get_settings().database_url
 
-# Создаем engine с timeout настройками
 engine = create_engine(
     DATABASE_URL,
     echo=True,
-    pool_timeout=10,             # Timeout для получения connection из pool
-    pool_recycle=100,            # Переподключение каждый час
+    pool_timeout=10,             # Wait at most 10 seconds for a pooled connection.
+    pool_recycle=100,            # Recycle pooled connections after 100 seconds.
     connect_args={
-        "connect_timeout": 10,   # Timeout подключения к PostgreSQL
+        "connect_timeout": 10,   # Bound the initial PostgreSQL connection.
         "application_name": "chat-api"
     } if DATABASE_URL.startswith("postgresql") else {}
 )

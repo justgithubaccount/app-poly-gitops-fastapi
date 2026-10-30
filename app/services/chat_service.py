@@ -1,7 +1,7 @@
 import time
 from typing import List, Optional
 
-from app.logger import enrich_context  # логгер с контекстом
+from app.logger import enrich_context
 
 from ..core.llm_client import OpenRouterClient
 from ..schemas import Message
@@ -32,7 +32,7 @@ class ChatService:
             user_message=user_message,
             model=model,
             trace_id=trace_id,
-            job="chat"  # 👈 добавлено: метка job для Vector → Loki
+            job="chat"
         )
 
         log.bind(event="llm_request").info("LLM request initiated")

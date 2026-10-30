@@ -3,8 +3,6 @@ import os
 from typing import Any, Dict
 
 from opentelemetry import trace
-
-# Правильный импорт для логов
 from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -46,26 +44,22 @@ def setup_tracing(app) -> None:
         logging.getLogger(__name__).info("OpenTelemetry export disabled")
         return
 
-    # Resource с метаданными сервиса и Kubernetes
     resource = Resource(attributes={
         "service.name": os.getenv("OTEL_SERVICE_NAME", "chat-api"),
         "service.version": os.getenv("APP_VERSION", "0.1.0"),
         "deployment.environment": os.getenv("ENVIRONMENT", "production"),
-        # Kubernetes metadata - обязательные атрибуты для observability
         "k8s.pod.name": os.getenv("K8S_POD_NAME", "unknown"),
         "k8s.namespace": os.getenv("K8S_NAMESPACE", "chat"),
         "k8s.node.name": os.getenv("K8S_NODE_NAME", "unknown"),
         "k8s.deployment.name": os.getenv("K8S_DEPLOYMENT_NAME", "chat-api"),
-        # Дополнительные метаданные
         "k8s.container.name": os.getenv("K8S_CONTAINER_NAME", "chat-api"),
         "k8s.pod.uid": os.getenv("K8S_POD_UID", "unknown"),
     })
 
-    # Для HTTP протокола добавляем правильные пути
+    # OTLP/HTTP exporters require a signal-specific path.
     traces_endpoint = f"{otlp_endpoint}/v1/traces" if not otlp_endpoint.endswith("/v1/traces") else otlp_endpoint
     logs_endpoint = f"{otlp_endpoint}/v1/logs" if not otlp_endpoint.endswith("/v1/logs") else otlp_endpoint
 
-    # === TRACES ===
     provider = None
     if traces_enabled:
         provider = TracerProvider(resource=resource)
@@ -86,7 +80,6 @@ def setup_tracing(app) -> None:
         provider.add_span_processor(trace_processor)
         trace.set_tracer_provider(provider)
 
-    # === LOGS ===
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
     if logs_enabled:
@@ -109,7 +102,6 @@ def setup_tracing(app) -> None:
         set_logger_provider(log_provider)
         root_logger.addHandler(LoggingHandler(level=logging.INFO, logger_provider=log_provider))
 
-    # JSON logging для production
     if os.getenv("ENVIRONMENT") == "production":
         import json
 
@@ -123,11 +115,10 @@ def setup_tracing(app) -> None:
                     "pathname": record.pathname,
                     "lineno": record.lineno,
                 }
-                # Добавляем trace context
+                # Correlate JSON log records with the active span.
                 span = trace.get_current_span()
                 if span.is_recording():
                     ctx = span.get_span_context()
-                    # Приводим к нужным типам для MyPy
                     trace_id: int = ctx.trace_id
                     span_id: int = ctx.span_id
                     log_obj["trace_id"] = format(trace_id, '032x')
@@ -138,14 +129,12 @@ def setup_tracing(app) -> None:
         console_handler.setFormatter(JSONFormatter())
         root_logger.addHandler(console_handler)
     else:
-        # Human-readable для dev
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(
             logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         )
         root_logger.addHandler(console_handler)
 
-    # FastAPI instrumentation
     if provider is not None:
         FastAPIInstrumentor().instrument_app(
             app,
@@ -153,7 +142,6 @@ def setup_tracing(app) -> None:
             server_request_hook=server_request_hook,
         )
 
-    # Log успешной инициализации
     logger = logging.getLogger(__name__)
     logger.info(
         "OpenTelemetry initialized",

@@ -28,7 +28,6 @@ api_router = APIRouter(
     tags=["chat"]
 )
 
-# In-memory fallback (not used when database is configured)
 memory = ProjectMemory()
 meter = metrics.get_meter(__name__)
 chat_counter = meter.create_counter("chat_requests_total")
@@ -75,7 +74,6 @@ async def chat_endpoint(
     except Exception as e:
         log.bind(event="chat_api_error", error=str(e)).error("Standard chat request failed")
         traceback.print_exc()
-        # raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="...")
         raise HTTPException(status_code=500, detail="AI сервис недоступен")
 
 @api_router.post("/projects", response_model=ProjectInfo)
@@ -126,7 +124,6 @@ async def chat_in_project(
         span_id = format(ctx.span_id, "016x")
 
     try:
-        # Ensure project exists
         project = session.get(Project, project_id)
         if not project:
             raise ValueError(f"Проект {project_id} не найден")
